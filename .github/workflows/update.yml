@@ -69,11 +69,18 @@ jobs:
           p = pathlib.Path("Formula/lyrsmith.rb")
           text = p.read_text()
 
+          # Fix poet's placeholder metadata
+          text = re.sub(r'desc ".*?"', 'desc "TUI app for transcribing and editing synced song lyrics"', text)
+          text = re.sub(r'homepage ".*?"', 'homepage "https://github.com/triluch/lyrsmith"', text)
+
           # Remove poet's generic "python3" dep — we pin python@3.13 below
           text = re.sub(r'\n  depends_on "python3"\n', '\n', text)
 
-          # Remove empty resource blocks (binary-wheel-only packages poet can't resolve)
-          text = re.sub(r'\n  resource "[^"]*" do\n    url ""\n    sha256 ""\n  end\n', '\n', text)
+          # Remove all resource blocks — unused since def install calls pip directly
+          text = re.sub(r'\n  resource "[^"]*" do\n.*?\n  end\n', '\n', text, flags=re.DOTALL)
+
+          # Collapse multiple blank lines into one
+          text = re.sub(r'\n{3,}', '\n\n', text)
 
           # Insert depends_on before the first resource or def install block
           def inject(m):
@@ -94,6 +101,11 @@ jobs:
 
           p.write_text(text)
           EOF
+
+      - name: Verify formula installs and runs
+        run: |
+          brew install ./Formula/lyrsmith.rb
+          lyrsmith --help
 
       - name: Commit and push
         env:
