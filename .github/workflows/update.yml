@@ -88,11 +88,15 @@ jobs:
           text = re.sub(r'(\n  (?:resource |def ))', inject, text, count=1)
 
           # Use python3.13 explicitly and install via pip with --prefer-binary
-          # so binary-wheel-only deps (ctranslate2, onnxruntime, etc.) are handled
+          # so binary-wheel-only deps (ctranslate2, onnxruntime, etc.) are handled.
+          # Clean venv (no --system-site-packages) avoids conflicts with Homebrew's
+          # Python site-packages; explicit pip upgrade ensures a working pip.
           text = re.sub(
               r'  def install\n.*?  end\n',
               '  def install\n'
-              '    venv = virtualenv_create(libexec, "python3.13")\n'
+              '    python = Formula["python@3.13"].opt_bin/"python3.13"\n'
+              '    system python, "-m", "venv", libexec\n'
+              '    system libexec/"bin/pip", "install", "--upgrade", "pip"\n'
               '    system libexec/"bin/pip", "install", "--prefer-binary", "lyrsmith==#{version}"\n'
               '    bin.install_symlink Dir["#{libexec}/bin/lyrsmith"]\n'
               '  end\n',
@@ -102,13 +106,7 @@ jobs:
           p.write_text(text)
           EOF
 
-      - name: Verify formula installs and runs
-        run: |
-          brew tap triluch/lyrsmith "$(pwd)"
-          brew install triluch/lyrsmith/lyrsmith
-          lyrsmith --help
-
-      - name: Commit and push
+      - name: Commit formula locally
         env:
           TAG: ${{ steps.ver.outputs.tag }}
         run: |
@@ -117,4 +115,15 @@ jobs:
           git add Formula/lyrsmith.rb
           git diff --staged --quiet && echo "No changes to commit" && exit 0
           git commit -m "lyrsmith $TAG"
-          git push
+
+      - name: Verify formula installs and runs
+        run: |
+          # Tap the local repo after committing so brew clones the actual generated formula
+          brew tap triluch/lyrsmith "$(pwd)"
+          echo "Local formula sha256:  $(shasum -a 256 Formula/lyrsmith.rb)"
+          echo "Tapped formula sha256: $(shasum -a 256 "$(brew --repository triluch/lyrsmith)/Formula/lyrsmith.rb")"
+          brew install --build-from-source triluch/lyrsmith/lyrsmith
+          lyrsmith --help
+
+      - name: Push
+        run: git push
