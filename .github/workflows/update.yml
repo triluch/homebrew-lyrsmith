@@ -98,6 +98,9 @@ jobs:
               '    system python, "-m", "venv", libexec\n'
               '    system libexec/"bin/pip", "install", "--upgrade", "pip"\n'
               '    system libexec/"bin/pip", "install", "--prefer-binary", "lyrsmith==#{version}"\n'
+              '    # Remove PyAV bundled dylibs — Homebrew ffmpeg (via mpv) provides them,\n'
+              '    # and the bundled copies have headers too short for Homebrew to relocate\n'
+              '    Pathname.glob(libexec/"lib/python3.*/site-packages/av/.dylibs").each(&:rmtree)\n'
               '    bin.install_symlink Dir["#{libexec}/bin/lyrsmith"]\n'
               '  end\n',
               text, flags=re.DOTALL
