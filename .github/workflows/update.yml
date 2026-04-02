@@ -104,7 +104,8 @@ jobs:
 
       - name: Verify formula installs and runs
         run: |
-          brew install ./Formula/lyrsmith.rb
+          brew tap triluch/lyrsmith "$(pwd)"
+          brew install triluch/lyrsmith/lyrsmith
           lyrsmith --help
 
       - name: Commit and push
