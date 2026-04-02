@@ -84,7 +84,7 @@ jobs:
 
           # Insert depends_on before the first resource or def install block
           def inject(m):
-              return '\n  depends_on "ffmpeg"\n  depends_on "mpv"\n  depends_on "python@3.13"\n\n  skip_clean "libexec"\n' + m.group(1)
+              return '\n  depends_on "ffmpeg"\n  depends_on "mpv"\n  depends_on "python@3.13"\n  depends_on "pkg-config" => :build\n\n  skip_clean "libexec"\n' + m.group(1)
           text = re.sub(r'(\n  (?:resource |def ))', inject, text, count=1)
 
           # Use python3.13 explicitly and install via pip with --prefer-binary
