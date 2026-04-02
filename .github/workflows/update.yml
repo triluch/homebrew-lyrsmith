@@ -61,7 +61,7 @@ jobs:
           # Use a venv for full isolation from the macOS framework Python's site-packages,
           # which otherwise bleeds into sys.path and causes pkg_resources import errors.
           "$PY" -m venv /tmp/poet-env
-          /tmp/poet-env/bin/pip install homebrew-pypi-poet "lyrsmith==$VER"
+          /tmp/poet-env/bin/pip install setuptools homebrew-pypi-poet "lyrsmith==$VER"
           /tmp/poet-env/bin/poet -f lyrsmith > Formula/lyrsmith.rb
           # Inject native dependencies — poet only covers PyPI packages
           "$PY" - <<'EOF'
