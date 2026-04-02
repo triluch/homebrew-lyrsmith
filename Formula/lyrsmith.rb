@@ -6,7 +6,6 @@ class Lyrsmith < Formula
   url "https://files.pythonhosted.org/packages/d9/f3/14c82999e9afdb1778885bb5adc1d97cd97003473f9f2dd0d5d6a2bb8448/lyrsmith-0.1.0.tar.gz"
   sha256 "0bd8f78b54df20f0df7b02c7cd73124d189ed396d2db983e23deca1b5d0f6051"
 
-  depends_on "python3"
 
   depends_on "mpv"
   depends_on "python@3.13"
@@ -36,25 +35,13 @@ class Lyrsmith < Formula
     sha256 "12ff4785d337a1bb490bb7e9c2b1ee5da3112e94a8622f26a6c77f5d2fc6842a"
   end
 
-  resource "ctranslate2" do
-    url ""
-    sha256 ""
-  end
 
-  resource "faster-whisper" do
-    url ""
-    sha256 ""
-  end
 
   resource "filelock" do
     url "https://files.pythonhosted.org/packages/94/b8/00651a0f559862f3bb7d6f7477b192afe3f583cc5e26403b44e59a55ab34/filelock-3.25.2.tar.gz"
     sha256 "b64ece2b38f4ca29dd3e810287aa8c48182bbecd1ae6e9ae126c9b35f1382694"
   end
 
-  resource "flatbuffers" do
-    url ""
-    sha256 ""
-  end
 
   resource "fsspec" do
     url "https://files.pythonhosted.org/packages/e1/cf/b50ddf667c15276a9ab15a70ef5f257564de271957933ffea49d2cdbcdfb/fsspec-2026.3.0.tar.gz"
@@ -131,10 +118,6 @@ class Lyrsmith < Formula
     sha256 "2d390634c5182175533585cc89f3608a4682ccb173cc9bb940b2881c8d6f8fa0"
   end
 
-  resource "onnxruntime" do
-    url ""
-    sha256 ""
-  end
 
   resource "packaging" do
     url "https://files.pythonhosted.org/packages/65/ee/299d360cdc32edc7d2cf530f3accf79c4fca01e96ffc950d8a52213bd8e4/packaging-26.0.tar.gz"
@@ -217,8 +200,9 @@ class Lyrsmith < Formula
   end
 
   def install
-    virtualenv_create(libexec, "python3")
-    virtualenv_install_with_resources
+    venv = virtualenv_create(libexec, "python3.13")
+    system libexec/"bin/pip", "install", "--prefer-binary", "lyrsmith==#{version}"
+    bin.install_symlink Dir["#{libexec}/bin/lyrsmith"]
   end
 
   test do
