@@ -1,0 +1,87 @@
+name: Update formula
+
+on:
+  repository_dispatch:
+    types: [new-release]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to package (e.g. v1.2.3)"
+        required: true
+        type: string
+
+jobs:
+  update:
+    runs-on: macos-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        id: python
+        with:
+          python-version: "3.13"
+
+      - name: Resolve version
+        id: ver
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ inputs.version }}"
+          else
+            TAG="${{ github.event.client_payload.version }}"
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "ver=${TAG#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for PyPI to propagate
+        if: github.event_name == 'repository_dispatch'
+        env:
+          VER: ${{ steps.ver.outputs.ver }}
+        run: |
+          sleep 15
+          MAX=30
+          COUNT=0
+          until curl -sf "https://pypi.org/pypi/lyrsmith/$VER/json" > /dev/null; do
+            COUNT=$((COUNT+1))
+            if [ $COUNT -ge $MAX ]; then
+              echo "Timed out waiting for lyrsmith $VER on PyPI after $((15 + COUNT * 10))s"
+              exit 1
+            fi
+            echo "Not yet available (attempt $COUNT/$MAX), retrying in 10s..."
+            sleep 10
+          done
+          echo "lyrsmith $VER is available on PyPI"
+
+      - name: Generate formula
+        env:
+          VER: ${{ steps.ver.outputs.ver }}
+        run: |
+          PY="${{ steps.python.outputs.python-path }}"
+          "$PY" -m pip install homebrew-pypi-poet
+          "$PY" -m pip install "lyrsmith==$VER"
+          "$(dirname "$PY")/poet" -f lyrsmith > Formula/lyrsmith.rb
+          # Inject native dependencies — poet only covers PyPI packages
+          "$PY" - <<'EOF'
+          import re, pathlib
+          p = pathlib.Path("Formula/lyrsmith.rb")
+          text = p.read_text()
+          # Insert depends_on before the first resource or def install block.
+          # Anchoring on license is unreliable when pyproject.toml uses
+          # license = { file = "LICENSE" } instead of a bare SPDX string.
+          def inject(m):
+              return '\n  depends_on "mpv"\n  depends_on "python@3.13"\n' + m.group(1)
+          text = re.sub(r'(\n  (?:resource |def ))', inject, text, count=1)
+          p.write_text(text)
+          EOF
+
+      - name: Commit and push
+        env:
+          TAG: ${{ steps.ver.outputs.tag }}
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add Formula/lyrsmith.rb
+          git diff --staged --quiet && echo "No changes to commit" && exit 0
+          git commit -m "lyrsmith $TAG"
+          git push
