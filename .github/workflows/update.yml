@@ -58,10 +58,11 @@ jobs:
           VER: ${{ steps.ver.outputs.ver }}
         run: |
           PY="${{ steps.python.outputs.python-path }}"
-          "$PY" -m pip install homebrew-pypi-poet
-          "$PY" -m pip install "lyrsmith==$VER"
-          # Run via $PY directly — the poet script's shebang picks up system Python and its packages instead
-          "$PY" -c "import sys; sys.argv=['poet','-f','lyrsmith']; from poet import main; main()" > Formula/lyrsmith.rb
+          # Use a venv for full isolation from the macOS framework Python's site-packages,
+          # which otherwise bleeds into sys.path and causes pkg_resources import errors.
+          "$PY" -m venv /tmp/poet-env
+          /tmp/poet-env/bin/pip install homebrew-pypi-poet "lyrsmith==$VER"
+          /tmp/poet-env/bin/poet -f lyrsmith > Formula/lyrsmith.rb
           # Inject native dependencies — poet only covers PyPI packages
           "$PY" - <<'EOF'
           import re, pathlib
