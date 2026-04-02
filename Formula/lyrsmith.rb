@@ -9,6 +9,7 @@ class Lyrsmith < Formula
   depends_on "ffmpeg"
   depends_on "mpv"
   depends_on "python@3.13"
+  depends_on "pkg-config" => :build
 
   skip_clean "libexec"
 
