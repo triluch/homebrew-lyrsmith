@@ -84,7 +84,7 @@ jobs:
 
           # Insert depends_on before the first resource or def install block
           def inject(m):
-              return '\n  depends_on "mpv"\n  depends_on "python@3.13"\n\n  skip_clean "libexec"\n' + m.group(1)
+              return '\n  depends_on "ffmpeg"\n  depends_on "mpv"\n  depends_on "python@3.13"\n\n  skip_clean "libexec"\n' + m.group(1)
           text = re.sub(r'(\n  (?:resource |def ))', inject, text, count=1)
 
           # Use python3.13 explicitly and install via pip with --prefer-binary
@@ -97,10 +97,11 @@ jobs:
               '    python = Formula["python@3.13"].opt_bin/"python3.13"\n'
               '    system python, "-m", "venv", libexec\n'
               '    system libexec/"bin/pip", "install", "--upgrade", "pip"\n'
-              '    system libexec/"bin/pip", "install", "--prefer-binary", "lyrsmith==#{version}"\n'
-              '    # libopencore-amrwb/amrnb are AMR mobile-call codecs — not needed for music.\n'
-              '    # Their Mach-O headers are too short for Homebrew to write the installed path.\n'
-              '    Pathname.glob(libexec/"lib/python3.*/site-packages/av/.dylibs/libopencore-amr*.dylib").each(&:unlink)\n'
+              '    # Build av from source against Homebrew ffmpeg so it links to managed dylibs\n'
+              '    # rather than bundled wheels whose Mach-O headers are too short to relocate.\n'
+              '    ENV.prepend_path "PKG_CONFIG_PATH", Formula["ffmpeg"].opt_lib/"pkgconfig"\n'
+              '    system libexec/"bin/pip", "install", "--prefer-binary", "--no-binary=av",\n'
+              '           "lyrsmith==#{version}"\n'
               '    bin.install_symlink Dir["#{libexec}/bin/lyrsmith"]\n'
               '  end\n',
               text, flags=re.DOTALL
