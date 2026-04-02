@@ -98,12 +98,9 @@ jobs:
               '    system python, "-m", "venv", libexec\n'
               '    system libexec/"bin/pip", "install", "--upgrade", "pip"\n'
               '    system libexec/"bin/pip", "install", "--prefer-binary", "lyrsmith==#{version}"\n'
-              '    # PyAV bundles ffmpeg dylibs with short Mach-O headers that Homebrew cannot\n'
-              '    # relocate (no room to write the longer installed path). Change their IDs to\n'
-              '    # @loader_path/filename so Homebrew skips them during relocation.\n'
-              '    Pathname.glob(libexec/"lib/python3.*/site-packages/av/.dylibs/*.dylib").each do |dylib|\n'
-              '      system "install_name_tool", "-id", "@loader_path/#{dylib.basename}", dylib\n'
-              '    end\n'
+              '    # libopencore-amrwb/amrnb are AMR mobile-call codecs — not needed for music.\n'
+              '    # Their Mach-O headers are too short for Homebrew to write the installed path.\n'
+              '    Pathname.glob(libexec/"lib/python3.*/site-packages/av/.dylibs/libopencore-amr*.dylib").each(&:unlink)\n'
               '    bin.install_symlink Dir["#{libexec}/bin/lyrsmith"]\n'
               '  end\n',
               text, flags=re.DOTALL
