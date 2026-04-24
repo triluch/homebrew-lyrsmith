@@ -3,8 +3,8 @@ class Lyrsmith < Formula
 
   desc "TUI app for transcribing and editing synced song lyrics"
   homepage "https://github.com/triluch/lyrsmith"
-  url "https://files.pythonhosted.org/packages/5f/10/e31df56e309f5d96fd2341914e5261abb6db8c0617f7a00794b52ec30ccf/lyrsmith-0.2.1.tar.gz"
-  sha256 "69e832b632ed98b0ab670a021d6ed79e120bf581c90681a5de1869cc92d51842"
+  url "https://files.pythonhosted.org/packages/87/10/9d45c80590aee70f5ded8bbeec1cba9ef3a7cb96a308257e0ff2f41edc0c/lyrsmith-0.3.0.tar.gz"
+  sha256 "e68273034ad54b8d1caf9e9374e3ef4af8d4fa6ac7ffd723bd2023a4b1f9f185"
 
   depends_on "ffmpeg"
   depends_on "mpv"
